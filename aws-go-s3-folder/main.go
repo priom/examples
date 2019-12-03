@@ -35,7 +35,7 @@ func main() {
 			name := item.Name()
 			filePath := filepath.Join(siteDir, name)
 			if _, err := s3.NewBucketObject(ctx, name, &s3.BucketObjectArgs{
-				Bucket:      pulumi.StringOutput(siteBucket.ID),                  // reference to the s3.Bucket object
+				Bucket:      siteBucket.ID(),                                     // reference to the s3.Bucket object
 				Source:      pulumi.NewFileAsset(filePath),                       // use FileAsset to point to a file
 				ContentType: pulumi.String(mime.TypeByExtension(path.Ext(name))), // set the MIME type of the file
 			}); err != nil {
@@ -45,15 +45,16 @@ func main() {
 
 		// Set the access policy for the bucket so all objects are readable
 		if _, err := s3.NewBucketPolicy(ctx, "bucketPolicy", &s3.BucketPolicyArgs{
-			Bucket: siteBucket.ID,                                        // refer to the bucket created earlier
-			Policy: siteBucket.ID.ApplyString(publicReadPolicyForBucket), // use output property `siteBucket.bucket`
+			Bucket: siteBucket.ID(),                                        // refer to the bucket created earlier
+			Policy: siteBucket.ID().ApplyString(publicReadPolicyForBucket), // use output property `siteBucket.bucket`
 		}); err != nil {
 			return err
 		}
 
 		// Stack exports
-		ctx.Export("bucketName", siteBucket.ID)
+		ctx.Export("bucketName", siteBucket.ID())
 		ctx.Export("websiteUrl", siteBucket.WebsiteEndpoint)
+		ctx.Export("websiteIndex", siteBucket.Website.IndexDocument())
 		return nil
 	})
 }
